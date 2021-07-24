@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
+import numpy as np
 
 from maskrcnn_benchmark.modeling.roi_heads.box_head.box_head import build_roi_box_head
 from maskrcnn_benchmark.modeling.roi_heads.mask_head.mask_head import build_roi_mask_head
@@ -54,6 +55,15 @@ class CombinedROIHeads(torch.nn.ModuleDict):
                 graph_features = x
             # During training, self.box() will return the unaltered proposals as "detections"
             # this makes the API consistent during training and testing
+            skip_detection=True
+            if skip_detection:
+                print('skip detection to get keypoint of whole input image')
+                w,h = detections[0].size
+                bbox_harcode = [[1,1,w-1,h-1]]
+                detections[0].bbox = torch.from_numpy(np.asarray(bbox_harcode,dtype=np.float32))
+                detections[0].extra_fields['scores']=torch.from_numpy(np.asarray([0.9],dtype=np.float32))
+                detections[0].extra_fields['labels']=torch.from_numpy(np.asarray([1]))
+
             x, detections, loss_graph = self.graph(graph_features, detections, targets)
             losses.update(loss_graph)
 
