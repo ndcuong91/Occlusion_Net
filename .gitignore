@@ -1,0 +1,5 @@
+
+data/occlusion_net.pth
+*.pyc
+log
+cocoapi/

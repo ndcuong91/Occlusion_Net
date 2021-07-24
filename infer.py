@@ -12,13 +12,16 @@ import numpy as np
 import datetime
 import json
 
+image_dir='test'
+vis = True
+config_file = 'data/occlusion_net_test.yaml'
 
 def parse_args():
     parser = argparse.ArgumentParser(description='evaluation on zensors data')
 
     parser.add_argument(
         '-cfg', '--config_file', help='the config file of the model',
-        default='configs/infer.yaml')
+        default=config_file)
 
     parser.add_argument(
         '-ut', '--url_txt',
@@ -28,7 +31,7 @@ def parse_args():
         help='list of urls of images to be processed', default=[])
     parser.add_argument(
         '-ir', '--image_dir',
-        help='directory to load images to infer')
+        help='directory to load images to infer', default=image_dir)
     parser.add_argument(
         '-min_size', '--min_test_size',
         help='the minimum size of the test images (default: 800)', type=int, default=800)
@@ -41,7 +44,7 @@ def parse_args():
         help='the objects want to detect, support car and person', default='car'
     )
     parser.add_argument(
-        '-v', '--visualize', type=distutils.util.strtobool, default=False)
+        '-v', '--visualize', type=distutils.util.strtobool, default=vis)
     parser.add_argument(
         '-vis_color', default='rainbow')
 
@@ -73,7 +76,7 @@ def main():
     # update the config options with the config file
     cfg.merge_from_file(config_file)
     # manual override some options
-    cfg.merge_from_list(["MODEL.DEVICE", "cuda"])
+    cfg.merge_from_list(["MODEL.DEVICE", "cpu"])
 
     coco_demo = COCODemo(
         cfg,
@@ -103,40 +106,38 @@ def main():
         #predictions = coco_demo.compute_prediction(img)
         #top_predictions = coco_demo.select_top_predictions(predictions)
         #print(top_predictions.get_field("keypoints").Keypoints[0])
-        try:
-        #if 2>1:
-            predictions = coco_demo.compute_prediction(img)
-            top_predictions = coco_demo.select_top_predictions(predictions)
+        predictions = coco_demo.compute_prediction(img)
+        top_predictions = coco_demo.select_top_predictions(predictions)
 
-            scores = top_predictions.get_field("scores")
-            labels = top_predictions.get_field("labels")
-            boxes = predictions.bbox
+        scores = top_predictions.get_field("scores")
+        labels = top_predictions.get_field("labels")
+        boxes = predictions.bbox
 
-            infer_result = {'url': url,
-                            'boxes': [],
-                            'scores': [],
-                            'labels': []}
-            for box, score, label in zip(boxes, scores, labels):
-                boxpoints = [item for item in box.tolist()]
-                infer_result['boxes'].append(boxpoints)
-                infer_result['scores'].append(score.item())
-                infer_result['labels'].append(label.item())
-            record_dict['results'].append(infer_result)
-            # visualize the results
-            if save_image:
-                result = np.copy(img)
-                #result = coco_demo.overlay_boxes(result, top_predictions)
-                #result = coco_demo.overlay_class_names(result, top_predictions)
-                if cfg.MODEL.KEYPOINT_ON:
-                     if target == 'person':
-                        result = coco_demo.overlay_keypoints_graph(result, top_predictions, target='person')
-                     if target == 'car':
-                        result = coco_demo.overlay_keypoints_graph(result, top_predictions,vis_color , target='car')
-                cv2.imwrite(os.path.join(output_dir, url.split('/')[-1]), result)
-                print(os.path.join(output_dir, url.split('/')[-1]))
-        except:
-            print('Fail to infer for image {}. Skipped.'.format(url))
-            continue
+        infer_result = {'url': url,
+                        'boxes': [],
+                        'scores': [],
+                        'labels': []}
+        for box, score, label in zip(boxes, scores, labels):
+            boxpoints = [item for item in box.tolist()]
+            infer_result['boxes'].append(boxpoints)
+            infer_result['scores'].append(score.item())
+            infer_result['labels'].append(label.item())
+        record_dict['results'].append(infer_result)
+        # visualize the results
+        if save_image:
+            result = np.copy(img)
+            #result = coco_demo.overlay_boxes(result, top_predictions)
+            #result = coco_demo.overlay_class_names(result, top_predictions)
+            if cfg.MODEL.KEYPOINT_ON:
+                 if target == 'person':
+                    result = coco_demo.overlay_keypoints_graph(result, top_predictions, target='person')
+                 if target == 'car':
+                    result = coco_demo.overlay_keypoints_graph(result, top_predictions,vis_color , target='car')
+            cv2.imwrite(os.path.join(output_dir, url.split('/')[-1]), result)
+            print(os.path.join(output_dir, url.split('/')[-1]))
+    # except:
+    #     print('Fail to infer for image {}. Skipped.'.format(url))
+    #     continue
     print(now)
     now = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     print(now)
