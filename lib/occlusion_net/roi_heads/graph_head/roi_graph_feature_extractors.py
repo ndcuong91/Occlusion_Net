@@ -15,7 +15,7 @@ from .utils import *
 from sklearn.decomposition import PCA
 
 def graph_to_heatmap(graph_features):	
-        heatmap = torch.zeros([count,num_keypoints,width,width], dtype=torch.float64).cuda()
+        heatmap = torch.zeros([count,num_keypoints,width,width], dtype=torch.float64)
         index_y = graph_features[:,:,0].type(torch.int32)
         index_x = graph_features[:,:,1].type(torch.int32)
         value = graph_features[:,:,2]
@@ -38,11 +38,11 @@ def heatmaps_to_graph(heatmaps):
       values ,index= torch.max(heatmaps,2)
       index_y = index.div(width)
       index_x = index - index_y.mul(width)
-      index_y = index_y.type(torch.cuda.FloatTensor).view(count,num_keypoints,1)
-      index_x = index_x.type(torch.cuda.FloatTensor).view(count,num_keypoints,1)
+      index_y = index_y.type(torch.FloatTensor).view(count,num_keypoints,1)
+      index_x = index_x.type(torch.FloatTensor).view(count,num_keypoints,1)
       index_y = (index_y - (width/2))/(width/2)
       index_x = (index_x - (width/2))/(width/2)
-      values = values.type(torch.cuda.FloatTensor).view(count,num_keypoints,1)
+      values = values.type(torch.FloatTensor).view(count,num_keypoints,1)
 
       graph_features = torch.cat((index_x,index_y,values),2)
       return graph_features
@@ -135,7 +135,7 @@ def pca_computation(path):
 
         mean_shape=torch.FloatTensor(pca.mean_)
         pca_component = torch.FloatTensor(pca.components_)
-        mean_shape, pca_component = mean_shape.cuda(), pca_component.cuda()
+        # mean_shape, pca_component = mean_shape(), pca_component()
         return mean_shape, pca_component
 
 @registry.ROI_GRAPH_FEATURE_EXTRACTORS.register("graphRCNNFeatureExtractor")
@@ -168,11 +168,11 @@ class graphRCNNFeatureExtractor(nn.Module):
         self.rel_rec = torch.FloatTensor(self.rel_rec)
         self.rel_send = torch.FloatTensor(self.rel_send)
 
-        self.encoder= self.encoder.cuda()
-        self.encoder_rt = self.encoder_rt.cuda()
-        self.decoder = self.decoder.cuda()
-        self.rel_rec = self.rel_rec.cuda()
-        self.rel_send = self.rel_send.cuda()
+        # self.encoder= self.encoder.cuda()
+        # self.encoder_rt = self.encoder_rt.cuda()
+        # self.decoder = self.decoder.cuda()
+        # self.rel_rec = self.rel_rec.cuda()
+        # self.rel_send = self.rel_send.cuda()
 
         self.mean_shape, self.pca_component = pca_computation('data/pca_3d_cad.npy')
 
@@ -192,7 +192,7 @@ class graphRCNNFeatureExtractor(nn.Module):
         shape = shape.view(-1,12,3)
         idx = 8
         b = torch.zeros(shape.shape[0],1, 3)
-        b = b.cuda()
+        # b = b.cuda()
         shape = torch.cat([shape[:,:idx], b, shape[:,idx:]], 1) # considering the exhaust
         shape = torch.cat([shape, b], 1)# considering the middle of the boundingbox
         projected_points = orthographic_proj_withz(shape, rt[:,0:7], ratio)
