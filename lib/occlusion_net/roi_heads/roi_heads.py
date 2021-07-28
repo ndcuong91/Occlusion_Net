@@ -55,7 +55,7 @@ class CombinedROIHeads(torch.nn.ModuleDict):
                 graph_features = x
             # During training, self.box() will return the unaltered proposals as "detections"
             # this makes the API consistent during training and testing
-            skip_detection=True
+            skip_detection=False
             if skip_detection:
                 print('skip detection to get keypoint of whole input image')
                 w,h = detections[0].size
